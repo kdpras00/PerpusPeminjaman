@@ -9,6 +9,7 @@ use App\Models\Buku;
 use App\Models\Peminjaman;
 use App\Services\PeminjamanService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 
@@ -22,11 +23,27 @@ class PeminjamanController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $peminjamans = Peminjaman::with(['anggota', 'buku', 'petugas'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(StatusConstants::PAGINATION_PER_PAGE);
+        $query = Peminjaman::with(['anggota', 'buku', 'petugas']);
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('anggota', function ($q) use ($search) {
+                    $q->where('nama', 'like', "%{$search}%");
+                })
+                ->orWhereHas('buku', function ($q) use ($search) {
+                    $q->where('judul', 'like', "%{$search}%")
+                        ->orWhere('kode_buku', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $peminjamans = $query->orderBy('created_at', 'desc')
+            ->paginate(StatusConstants::PAGINATION_PER_PAGE)
+            ->withQueryString();
 
         return view('peminjaman.index', compact('peminjamans'));
     }
@@ -49,7 +66,7 @@ class PeminjamanController extends Controller
     {
         try {
             $petugas = Session::get('petugas');
-            
+
             if (!$petugas) {
                 return back()->with('error', 'Session tidak valid. Silakan login kembali.');
             }

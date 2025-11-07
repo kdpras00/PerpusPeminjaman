@@ -6,6 +6,7 @@ use App\Constants\StatusConstants;
 use App\Http\Requests\AnggotaRequest;
 use App\Models\Anggota;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AnggotaController extends Controller
@@ -13,10 +14,23 @@ class AnggotaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $anggotas = Anggota::orderBy('created_at', 'desc')
-            ->paginate(StatusConstants::PAGINATION_PER_PAGE);
+        $query = Anggota::query();
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                    ->orWhere('alamat', 'like', "%{$search}%")
+                    ->orWhere('no_telp', 'like', "%{$search}%");
+            });
+        }
+
+        $anggotas = $query->orderBy('created_at', 'desc')
+            ->paginate(StatusConstants::PAGINATION_PER_PAGE)
+            ->withQueryString();
 
         return view('anggota.index', compact('anggotas'));
     }
@@ -47,7 +61,7 @@ class AnggotaController extends Controller
     public function show(Anggota $anggota): View
     {
         $anggota->load('peminjaman');
-        
+
         return view('anggota.show', compact('anggota'));
     }
 

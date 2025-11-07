@@ -6,6 +6,7 @@ use App\Constants\StatusConstants;
 use App\Http\Requests\BukuRequest;
 use App\Models\Buku;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BukuController extends Controller
@@ -13,10 +14,24 @@ class BukuController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $bukus = Buku::orderBy('created_at', 'desc')
-            ->paginate(StatusConstants::PAGINATION_PER_PAGE);
+        $query = Buku::query();
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('kode_buku', 'like', "%{$search}%")
+                    ->orWhere('judul', 'like', "%{$search}%")
+                    ->orWhere('pengarang', 'like', "%{$search}%")
+                    ->orWhere('penerbit', 'like', "%{$search}%");
+            });
+        }
+
+        $bukus = $query->orderBy('created_at', 'desc')
+            ->paginate(StatusConstants::PAGINATION_PER_PAGE)
+            ->withQueryString();
 
         return view('buku.index', compact('bukus'));
     }

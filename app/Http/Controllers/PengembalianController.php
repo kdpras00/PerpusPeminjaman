@@ -7,6 +7,7 @@ use App\Http\Requests\PengembalianRequest;
 use App\Models\Pengembalian;
 use App\Services\PengembalianService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PengembalianController extends Controller
@@ -19,11 +20,27 @@ class PengembalianController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $pengembalians = Pengembalian::with(['peminjaman.anggota', 'peminjaman.buku'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(StatusConstants::PAGINATION_PER_PAGE);
+        $query = Pengembalian::with(['peminjaman.anggota', 'peminjaman.buku']);
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('peminjaman.anggota', function ($q) use ($search) {
+                    $q->where('nama', 'like', "%{$search}%");
+                })
+                ->orWhereHas('peminjaman.buku', function ($q) use ($search) {
+                    $q->where('judul', 'like', "%{$search}%")
+                        ->orWhere('kode_buku', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $pengembalians = $query->orderBy('created_at', 'desc')
+            ->paginate(StatusConstants::PAGINATION_PER_PAGE)
+            ->withQueryString();
 
         return view('pengembalian.index', compact('pengembalians'));
     }

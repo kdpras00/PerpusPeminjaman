@@ -9,25 +9,25 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 class PengembalianExport implements FromCollection, WithHeadings, WithMapping
 {
-    protected $filters;
+    protected array $filters;
 
-    public function __construct($filters = [])
+    public function __construct(array $filters = [])
     {
         $this->filters = $filters;
     }
 
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         $query = Pengembalian::with(['peminjaman.anggota', 'peminjaman.buku']);
 
-        if (isset($this->filters['tanggal_mulai'])) {
+        if (!empty($this->filters['tanggal_mulai'])) {
             $query->whereDate('tgl_kembali_realisasi', '>=', $this->filters['tanggal_mulai']);
         }
 
-        if (isset($this->filters['tanggal_akhir'])) {
+        if (!empty($this->filters['tanggal_akhir'])) {
             $query->whereDate('tgl_kembali_realisasi', '<=', $this->filters['tanggal_akhir']);
         }
 

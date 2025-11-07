@@ -17,6 +17,7 @@ class Pengembalian extends Model
 
     protected $casts = [
         'tgl_kembali_realisasi' => 'date',
+        'denda' => 'integer',
     ];
 
     public function peminjaman(): BelongsTo

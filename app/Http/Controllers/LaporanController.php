@@ -2,173 +2,187 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Peminjaman;
-use App\Models\Pengembalian;
-use App\Models\Buku;
-use App\Models\Anggota;
+use App\Exports\AnggotaExport;
+use App\Exports\BukuExport;
 use App\Exports\PeminjamanExport;
 use App\Exports\PengembalianExport;
-use App\Exports\BukuExport;
-use App\Exports\AnggotaExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Services\LaporanService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LaporanController extends Controller
 {
-    public function index()
+    public function __construct(
+        private readonly LaporanService $laporanService
+    ) {
+    }
+
+    /**
+     * Display the report index page
+     */
+    public function index(): View
     {
         return view('laporan.index');
     }
 
-    public function peminjaman(Request $request)
+    /**
+     * Display peminjaman report
+     */
+    public function peminjaman(Request $request): View
     {
-        $query = Peminjaman::with(['anggota', 'buku', 'petugas']);
-
-        if ($request->filled('tanggal_mulai')) {
-            $query->whereDate('tgl_pinjam', '>=', $request->tanggal_mulai);
-        }
-
-        if ($request->filled('tanggal_akhir')) {
-            $query->whereDate('tgl_pinjam', '<=', $request->tanggal_akhir);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status_pinjam', $request->status);
-        }
-
-        $peminjamans = $query->orderBy('tgl_pinjam', 'desc')->get();
+        $filters = $this->getPeminjamanFilters($request);
+        $peminjamans = $this->laporanService->buildPeminjamanQuery($filters)->get();
 
         return view('laporan.peminjaman', compact('peminjamans'));
     }
 
-    public function peminjamanPdf(Request $request)
+    /**
+     * Generate peminjaman PDF report
+     */
+    public function peminjamanPdf(Request $request): Response
     {
-        $filters = $request->only(['tanggal_mulai', 'tanggal_akhir', 'status']);
-        
-        $query = Peminjaman::with(['anggota', 'buku', 'petugas']);
-
-        if ($request->filled('tanggal_mulai')) {
-            $query->whereDate('tgl_pinjam', '>=', $request->tanggal_mulai);
-        }
-
-        if ($request->filled('tanggal_akhir')) {
-            $query->whereDate('tgl_pinjam', '<=', $request->tanggal_akhir);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status_pinjam', $request->status);
-        }
-
-        $peminjamans = $query->orderBy('tgl_pinjam', 'desc')->get();
+        $filters = $this->getPeminjamanFilters($request);
+        $peminjamans = $this->laporanService->buildPeminjamanQuery($filters)->get();
         
         $pdf = Pdf::loadView('laporan.pdf.peminjaman', compact('peminjamans', 'filters'));
-        return $pdf->download('laporan-peminjaman-'.date('Y-m-d').'.pdf');
+        $filename = 'laporan-peminjaman-' . date('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
     }
 
-    public function peminjamanExcel(Request $request)
+    /**
+     * Generate peminjaman Excel report
+     */
+    public function peminjamanExcel(Request $request): BinaryFileResponse
     {
-        $filters = $request->only(['tanggal_mulai', 'tanggal_akhir', 'status']);
-        return Excel::download(new PeminjamanExport($filters), 'laporan-peminjaman-'.date('Y-m-d').'.xlsx');
+        $filters = $this->getPeminjamanFilters($request);
+        $filename = 'laporan-peminjaman-' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(new PeminjamanExport($filters), $filename);
     }
 
-    public function pengembalian(Request $request)
+    /**
+     * Display pengembalian report
+     */
+    public function pengembalian(Request $request): View
     {
-        $query = Pengembalian::with(['peminjaman.anggota', 'peminjaman.buku']);
-
-        if ($request->filled('tanggal_mulai')) {
-            $query->whereDate('tgl_kembali_realisasi', '>=', $request->tanggal_mulai);
-        }
-
-        if ($request->filled('tanggal_akhir')) {
-            $query->whereDate('tgl_kembali_realisasi', '<=', $request->tanggal_akhir);
-        }
-
-        $pengembalians = $query->orderBy('tgl_kembali_realisasi', 'desc')->get();
+        $filters = $this->getPengembalianFilters($request);
+        $pengembalians = $this->laporanService->buildPengembalianQuery($filters)->get();
         $totalDenda = $pengembalians->sum('denda');
 
         return view('laporan.pengembalian', compact('pengembalians', 'totalDenda'));
     }
 
-    public function pengembalianPdf(Request $request)
+    /**
+     * Generate pengembalian PDF report
+     */
+    public function pengembalianPdf(Request $request): Response
     {
-        $filters = $request->only(['tanggal_mulai', 'tanggal_akhir']);
-        
-        $query = Pengembalian::with(['peminjaman.anggota', 'peminjaman.buku']);
-
-        if ($request->filled('tanggal_mulai')) {
-            $query->whereDate('tgl_kembali_realisasi', '>=', $request->tanggal_mulai);
-        }
-
-        if ($request->filled('tanggal_akhir')) {
-            $query->whereDate('tgl_kembali_realisasi', '<=', $request->tanggal_akhir);
-        }
-
-        $pengembalians = $query->orderBy('tgl_kembali_realisasi', 'desc')->get();
+        $filters = $this->getPengembalianFilters($request);
+        $pengembalians = $this->laporanService->buildPengembalianQuery($filters)->get();
         $totalDenda = $pengembalians->sum('denda');
         
         $pdf = Pdf::loadView('laporan.pdf.pengembalian', compact('pengembalians', 'totalDenda', 'filters'));
-        return $pdf->download('laporan-pengembalian-'.date('Y-m-d').'.pdf');
+        $filename = 'laporan-pengembalian-' . date('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
     }
 
-    public function pengembalianExcel(Request $request)
+    /**
+     * Generate pengembalian Excel report
+     */
+    public function pengembalianExcel(Request $request): BinaryFileResponse
     {
-        $filters = $request->only(['tanggal_mulai', 'tanggal_akhir']);
-        return Excel::download(new PengembalianExport($filters), 'laporan-pengembalian-'.date('Y-m-d').'.xlsx');
+        $filters = $this->getPengembalianFilters($request);
+        $filename = 'laporan-pengembalian-' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(new PengembalianExport($filters), $filename);
     }
 
-    public function buku()
+    /**
+     * Display buku report
+     */
+    public function buku(): View
     {
-        $bukus = Buku::withCount([
-            'peminjaman',
-            'peminjaman as peminjaman_aktif_count' => function ($query) {
-                $query->where('status_pinjam', 'dipinjam');
-            }
-        ])->get();
+        $bukus = $this->laporanService->getBukuReport();
 
         return view('laporan.buku', compact('bukus'));
     }
 
-    public function bukuPdf()
+    /**
+     * Generate buku PDF report
+     */
+    public function bukuPdf(): Response
     {
-        $bukus = Buku::withCount([
-            'peminjaman',
-            'peminjaman as peminjaman_aktif_count' => function ($query) {
-                $query->where('status_pinjam', 'dipinjam');
-            }
-        ])->get();
+        $bukus = $this->laporanService->getBukuReport();
         
         $pdf = Pdf::loadView('laporan.pdf.buku', compact('bukus'));
-        return $pdf->download('laporan-buku-'.date('Y-m-d').'.pdf');
+        $filename = 'laporan-buku-' . date('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
     }
 
-    public function bukuExcel()
+    /**
+     * Generate buku Excel report
+     */
+    public function bukuExcel(): BinaryFileResponse
     {
-        return Excel::download(new BukuExport, 'laporan-buku-'.date('Y-m-d').'.xlsx');
+        $filename = 'laporan-buku-' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(new BukuExport, $filename);
     }
 
-    public function anggota()
+    /**
+     * Display anggota report
+     */
+    public function anggota(): View
     {
-        $anggotas = Anggota::withCount('peminjaman')
-            ->orderBy('peminjaman_count', 'desc')
-            ->get();
+        $anggotas = $this->laporanService->getAnggotaReport();
 
         return view('laporan.anggota', compact('anggotas'));
     }
 
-    public function anggotaPdf()
+    /**
+     * Generate anggota PDF report
+     */
+    public function anggotaPdf(): Response
     {
-        $anggotas = Anggota::withCount('peminjaman')
-            ->orderBy('peminjaman_count', 'desc')
-            ->get();
+        $anggotas = $this->laporanService->getAnggotaReport();
         
         $pdf = Pdf::loadView('laporan.pdf.anggota', compact('anggotas'));
-        return $pdf->download('laporan-anggota-'.date('Y-m-d').'.pdf');
+        $filename = 'laporan-anggota-' . date('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
     }
 
-    public function anggotaExcel()
+    /**
+     * Generate anggota Excel report
+     */
+    public function anggotaExcel(): BinaryFileResponse
     {
-        return Excel::download(new AnggotaExport, 'laporan-anggota-'.date('Y-m-d').'.xlsx');
+        $filename = 'laporan-anggota-' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(new AnggotaExport, $filename);
+    }
+
+    /**
+     * Get peminjaman filters from request
+     */
+    private function getPeminjamanFilters(Request $request): array
+    {
+        return $request->only(['tanggal_mulai', 'tanggal_akhir', 'status']);
+    }
+
+    /**
+     * Get pengembalian filters from request
+     */
+    private function getPengembalianFilters(Request $request): array
+    {
+        return $request->only(['tanggal_mulai', 'tanggal_akhir']);
     }
 }
 

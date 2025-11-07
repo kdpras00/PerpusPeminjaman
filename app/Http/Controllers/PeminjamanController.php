@@ -2,125 +2,122 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Peminjaman;
+use App\Constants\StatusConstants;
+use App\Http\Requests\PeminjamanRequest;
 use App\Models\Anggota;
 use App\Models\Buku;
+use App\Models\Peminjaman;
+use App\Services\PeminjamanService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Session;
+use Illuminate\View\View;
 
 class PeminjamanController extends Controller
 {
+    public function __construct(
+        private readonly PeminjamanService $peminjamanService
+    ) {
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
         $peminjamans = Peminjaman::with(['anggota', 'buku', 'petugas'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(StatusConstants::PAGINATION_PER_PAGE);
+
         return view('peminjaman.index', compact('peminjamans'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
-        $anggotas = Anggota::where('status', 'aktif')->get();
-        $bukus = Buku::where('stok', '>', 0)->get();
+        $anggotas = Anggota::aktif()->get();
+        $bukus = Buku::available()->get();
+
         return view('peminjaman.create', compact('anggotas', 'bukus'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(PeminjamanRequest $request): RedirectResponse
     {
-        $request->validate([
-            'anggota_id' => 'required|exists:anggota,id',
-            'buku_id' => 'required|exists:buku,id',
-            'tgl_pinjam' => 'required|date',
-            'tgl_harus_kembali' => 'required|date|after:tgl_pinjam',
-        ]);
+        try {
+            $petugas = Session::get('petugas');
+            
+            if (!$petugas) {
+                return back()->with('error', 'Session tidak valid. Silakan login kembali.');
+            }
 
-        // Check if book is available
-        $buku = Buku::findOrFail($request->buku_id);
-        if ($buku->stok <= 0) {
-            return back()->with('error', 'Stok buku tidak tersedia!');
+            $this->peminjamanService->createPeminjaman(
+                $request->validated(),
+                $petugas->id
+            );
+
+            return redirect()
+                ->route('peminjaman.index')
+                ->with('success', 'Transaksi peminjaman berhasil!');
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->with('error', $e->getMessage());
         }
-
-        $petugas = Session::get('petugas');
-
-        Peminjaman::create([
-            'anggota_id' => $request->anggota_id,
-            'buku_id' => $request->buku_id,
-            'petugas_id' => $petugas->id,
-            'tgl_pinjam' => $request->tgl_pinjam,
-            'tgl_harus_kembali' => $request->tgl_harus_kembali,
-            'status_pinjam' => 'dipinjam',
-        ]);
-
-        // Decrease book stock
-        $buku->update(['stok' => $buku->stok - 1]);
-
-        return redirect()->route('peminjaman.index')->with('success', 'Transaksi peminjaman berhasil!');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Peminjaman $peminjaman): View
     {
-        $peminjaman = Peminjaman::with(['anggota', 'buku', 'petugas', 'pengembalian'])
-            ->findOrFail($id);
+        $peminjaman->load(['anggota', 'buku', 'petugas', 'pengembalian']);
+
         return view('peminjaman.show', compact('peminjaman'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Peminjaman $peminjaman): View
     {
-        $peminjaman = Peminjaman::findOrFail($id);
-        $anggotas = Anggota::where('status', 'aktif')->get();
+        $anggotas = Anggota::aktif()->get();
         $bukus = Buku::all();
+
         return view('peminjaman.edit', compact('peminjaman', 'anggotas', 'bukus'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(PeminjamanRequest $request, Peminjaman $peminjaman): RedirectResponse
     {
-        $peminjaman = Peminjaman::findOrFail($id);
-        
-        $request->validate([
-            'anggota_id' => 'required|exists:anggota,id',
-            'buku_id' => 'required|exists:buku,id',
-            'tgl_pinjam' => 'required|date',
-            'tgl_harus_kembali' => 'required|date|after:tgl_pinjam',
-        ]);
+        $this->peminjamanService->updatePeminjaman(
+            $peminjaman,
+            $request->validated()
+        );
 
-        $peminjaman->update($request->only(['anggota_id', 'buku_id', 'tgl_pinjam', 'tgl_harus_kembali']));
-
-        return redirect()->route('peminjaman.index')->with('success', 'Data peminjaman berhasil diupdate!');
+        return redirect()
+            ->route('peminjaman.index')
+            ->with('success', 'Data peminjaman berhasil diupdate!');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Peminjaman $peminjaman): RedirectResponse
     {
-        $peminjaman = Peminjaman::findOrFail($id);
-        
-        // Return book stock if not returned yet
-        if ($peminjaman->status_pinjam == 'dipinjam') {
-            $buku = Buku::findOrFail($peminjaman->buku_id);
-            $buku->update(['stok' => $buku->stok + 1]);
-        }
-        
-        $peminjaman->delete();
+        try {
+            $this->peminjamanService->deletePeminjaman($peminjaman);
 
-        return redirect()->route('peminjaman.index')->with('success', 'Data peminjaman berhasil dihapus!');
+            return redirect()
+                ->route('peminjaman.index')
+                ->with('success', 'Data peminjaman berhasil dihapus!');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }

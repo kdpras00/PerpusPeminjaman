@@ -2,24 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Constants\StatusConstants;
+use App\Http\Requests\AnggotaRequest;
 use App\Models\Anggota;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class AnggotaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
-        $anggotas = Anggota::orderBy('created_at', 'desc')->paginate(10);
+        $anggotas = Anggota::orderBy('created_at', 'desc')
+            ->paginate(StatusConstants::PAGINATION_PER_PAGE);
+
         return view('anggota.index', compact('anggotas'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         return view('anggota.create');
     }
@@ -27,67 +32,54 @@ class AnggotaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(AnggotaRequest $request): RedirectResponse
     {
-        $request->validate([
-            'nama' => 'required',
-            'alamat' => 'required',
-            'no_telp' => 'required',
-            'tgl_daftar' => 'required|date',
-            'status' => 'required|in:aktif,nonaktif',
-        ]);
+        Anggota::create($request->validated());
 
-        Anggota::create($request->all());
-
-        return redirect()->route('anggota.index')->with('success', 'Data anggota berhasil ditambahkan!');
+        return redirect()
+            ->route('anggota.index')
+            ->with('success', 'Data anggota berhasil ditambahkan!');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Anggota $anggota): View
     {
-        $anggota = Anggota::with('peminjaman')->findOrFail($id);
+        $anggota->load('peminjaman');
+        
         return view('anggota.show', compact('anggota'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Anggota $anggota): View
     {
-        $anggota = Anggota::findOrFail($id);
         return view('anggota.edit', compact('anggota'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(AnggotaRequest $request, Anggota $anggota): RedirectResponse
     {
-        $anggota = Anggota::findOrFail($id);
-        
-        $request->validate([
-            'nama' => 'required',
-            'alamat' => 'required',
-            'no_telp' => 'required',
-            'tgl_daftar' => 'required|date',
-            'status' => 'required|in:aktif,nonaktif',
-        ]);
+        $anggota->update($request->validated());
 
-        $anggota->update($request->all());
-
-        return redirect()->route('anggota.index')->with('success', 'Data anggota berhasil diupdate!');
+        return redirect()
+            ->route('anggota.index')
+            ->with('success', 'Data anggota berhasil diupdate!');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Anggota $anggota): RedirectResponse
     {
-        $anggota = Anggota::findOrFail($id);
         $anggota->delete();
 
-        return redirect()->route('anggota.index')->with('success', 'Data anggota berhasil dihapus!');
+        return redirect()
+            ->route('anggota.index')
+            ->with('success', 'Data anggota berhasil dihapus!');
     }
 }

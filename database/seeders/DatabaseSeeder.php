@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Constants\StatusConstants;
 use App\Models\Anggota;
 use App\Models\Buku;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
             'alamat' => 'Jl. Contoh No. 123',
             'no_telp' => '08123456789',
             'tgl_daftar' => now(),
-            'status' => 'aktif'
+            'status' => StatusConstants::STATUS_AKTIF
         ]);
 
         Anggota::create([
@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
             'alamat' => 'Jl. Sample No. 456',
             'no_telp' => '08987654321',
             'tgl_daftar' => now(),
-            'status' => 'aktif'
+            'status' => StatusConstants::STATUS_AKTIF
         ]);
 
         // Sample Buku

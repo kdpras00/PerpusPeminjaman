@@ -2,24 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Constants\StatusConstants;
+use App\Http\Requests\BukuRequest;
 use App\Models\Buku;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class BukuController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
-        $bukus = Buku::orderBy('created_at', 'desc')->paginate(10);
+        $bukus = Buku::orderBy('created_at', 'desc')
+            ->paginate(StatusConstants::PAGINATION_PER_PAGE);
+
         return view('buku.index', compact('bukus'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         return view('buku.create');
     }
@@ -27,69 +32,52 @@ class BukuController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(BukuRequest $request): RedirectResponse
     {
-        $request->validate([
-            'kode_buku' => 'required|unique:buku,kode_buku',
-            'judul' => 'required',
-            'pengarang' => 'required',
-            'penerbit' => 'required',
-            'tahun_terbit' => 'required|integer',
-            'stok' => 'required|integer|min:0',
-        ]);
+        Buku::create($request->validated());
 
-        Buku::create($request->all());
-
-        return redirect()->route('buku.index')->with('success', 'Data buku berhasil ditambahkan!');
+        return redirect()
+            ->route('buku.index')
+            ->with('success', 'Data buku berhasil ditambahkan!');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Buku $buku): View
     {
-        $buku = Buku::findOrFail($id);
         return view('buku.show', compact('buku'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Buku $buku): View
     {
-        $buku = Buku::findOrFail($id);
         return view('buku.edit', compact('buku'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(BukuRequest $request, Buku $buku): RedirectResponse
     {
-        $buku = Buku::findOrFail($id);
-        
-        $request->validate([
-            'kode_buku' => 'required|unique:buku,kode_buku,'.$id,
-            'judul' => 'required',
-            'pengarang' => 'required',
-            'penerbit' => 'required',
-            'tahun_terbit' => 'required|integer',
-            'stok' => 'required|integer|min:0',
-        ]);
+        $buku->update($request->validated());
 
-        $buku->update($request->all());
-
-        return redirect()->route('buku.index')->with('success', 'Data buku berhasil diupdate!');
+        return redirect()
+            ->route('buku.index')
+            ->with('success', 'Data buku berhasil diupdate!');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Buku $buku): RedirectResponse
     {
-        $buku = Buku::findOrFail($id);
         $buku->delete();
 
-        return redirect()->route('buku.index')->with('success', 'Data buku berhasil dihapus!');
+        return redirect()
+            ->route('buku.index')
+            ->with('success', 'Data buku berhasil dihapus!');
     }
 }

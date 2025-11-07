@@ -9,29 +9,29 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 class PeminjamanExport implements FromCollection, WithHeadings, WithMapping
 {
-    protected $filters;
+    protected array $filters;
 
-    public function __construct($filters = [])
+    public function __construct(array $filters = [])
     {
         $this->filters = $filters;
     }
 
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         $query = Peminjaman::with(['anggota', 'buku', 'petugas']);
 
-        if (isset($this->filters['tanggal_mulai'])) {
+        if (!empty($this->filters['tanggal_mulai'])) {
             $query->whereDate('tgl_pinjam', '>=', $this->filters['tanggal_mulai']);
         }
 
-        if (isset($this->filters['tanggal_akhir'])) {
+        if (!empty($this->filters['tanggal_akhir'])) {
             $query->whereDate('tgl_pinjam', '<=', $this->filters['tanggal_akhir']);
         }
 
-        if (isset($this->filters['status'])) {
+        if (!empty($this->filters['status'])) {
             $query->where('status_pinjam', $this->filters['status']);
         }
 

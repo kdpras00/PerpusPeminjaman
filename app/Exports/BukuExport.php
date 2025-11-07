@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Constants\StatusConstants;
 use App\Models\Buku;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -10,14 +11,14 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class BukuExport implements FromCollection, WithHeadings, WithMapping
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         return Buku::withCount([
             'peminjaman',
             'peminjaman as peminjaman_aktif_count' => function ($query) {
-                $query->where('status_pinjam', 'dipinjam');
+                $query->where('status_pinjam', StatusConstants::STATUS_DIPINJAM);
             }
         ])->get();
     }

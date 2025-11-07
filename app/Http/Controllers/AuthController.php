@@ -28,21 +28,21 @@ class AuthController extends Controller
 
         if ($petugas && Hash::check($request->password, $petugas->password)) {
             Session::put('petugas', $petugas);
-            
-            // Check if AJAX request
-            if ($request->expectsJson() || $request->ajax()) {
+
+            // Check if AJAX/JSON request
+            if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Login berhasil! Selamat datang, ' . $petugas->nama_petugas,
                     'redirect' => route('dashboard')
-                ]);
+                ], 200);
             }
-            
+
             return redirect()->route('dashboard')->with('success', 'Login berhasil!');
         }
 
-        // Check if AJAX request
-        if ($request->expectsJson() || $request->ajax()) {
+        // Check if AJAX/JSON request
+        if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Username atau password salah!'

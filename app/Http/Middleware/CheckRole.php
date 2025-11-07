@@ -17,9 +17,15 @@ class CheckRole
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         $petugas = Session::get('petugas');
-        
+
         if (!$petugas) {
             return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu');
+        }
+
+        // Pastikan petugas adalah object dan memiliki property role
+        if (!is_object($petugas) || !isset($petugas->role)) {
+            Session::forget('petugas');
+            return redirect()->route('login')->with('error', 'Session tidak valid. Silakan login kembali.');
         }
 
         if (!in_array($petugas->role, $roles)) {

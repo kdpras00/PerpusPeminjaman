@@ -35,15 +35,15 @@
                     <div id="userMenu" class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded shadow">
                         <div class="px-4 py-3">
                             <p class="text-sm text-gray-900">
-                                {{ Session::get('petugas')->nama_petugas ?? 'User' }}
+                                {{ Session::get('petugas')?->nama_petugas ?? 'User' }}
                             </p>
                             <p class="text-sm font-medium text-gray-900 truncate">
-                                {{ ucfirst(Session::get('petugas')->role ?? '') }}
+                                {{ ucfirst(Session::get('petugas')?->role ?? '') }}
                             </p>
                         </div>
                         <ul class="py-1">
                             <li>
-                                <form action="{{ route('logout') }}" method="POST">
+                                <form action="{{ route('logout') }}" method="POST" id="logoutForm">
                                     @csrf
                                     <button type="submit" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         Logout
@@ -88,8 +88,8 @@
                                 <span class="ml-3 flex-1 whitespace-nowrap">Kelola Data Anggota</span>
                             </a>
                         </li>
-                        
-                        @if(Session::get('petugas')->role == 'petugas')
+
+                        @if(Session::get('petugas')?->role == 'petugas')
                         <li>
                             <a href="{{ route('peminjaman.index') }}" class="text-base text-gray-900 font-normal rounded-lg hover:bg-gray-100 flex items-center p-2 group {{ request()->routeIs('peminjaman.*') ? 'bg-gray-100' : '' }}">
                                 <svg class="w-6 h-6 text-gray-500 flex-shrink-0 group-hover:text-gray-900 transition duration-75" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -132,35 +132,92 @@
     </div>
 
     <script>
-        // Toggle sidebar on mobile
-        document.getElementById('toggleSidebarMobile').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('hidden');
+        // Pastikan SweetAlert2 tersedia sebelum digunakan
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fungsi helper untuk memastikan Swal tersedia
+            function ensureSwal(callback) {
+                if (typeof Swal !== 'undefined') {
+                    callback();
+                } else {
+                    // Tunggu sebentar jika Swal belum ter-load
+                    setTimeout(() => ensureSwal(callback), 100);
+                }
+            }
+
+            // Toggle sidebar on mobile
+            const toggleSidebarBtn = document.getElementById('toggleSidebarMobile');
+            if (toggleSidebarBtn) {
+                toggleSidebarBtn.addEventListener('click', function() {
+                    document.getElementById('sidebar').classList.toggle('hidden');
+                });
+            }
+
+            // Logout dengan konfirmasi SweetAlert
+            const logoutForm = document.getElementById('logoutForm');
+            if (logoutForm) {
+                logoutForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    ensureSwal(() => {
+                        Swal.fire({
+                            title: 'Apakah Anda yakin?',
+                            text: 'Anda akan keluar dari sistem',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3b82f6',
+                            cancelButtonColor: '#6b7280',
+                            confirmButtonText: 'Ya, Logout',
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Tampilkan loading
+                                Swal.fire({
+                                    title: 'Memproses Logout...',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+
+                                // Submit form
+                                logoutForm.submit();
+                            }
+                        });
+                    });
+                });
+            }
+
+            // Auto-dismiss alerts after 3 seconds
+            @if (session('success'))
+                ensureSwal(() => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: '{{ session('success') }}',
+                        timer: 3000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                });
+            @endif
+
+            @if (session('error'))
+                ensureSwal(() => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: '{{ session('error') }}',
+                        timer: 3000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                });
+            @endif
         });
-
-        // Auto-dismiss alerts after 3 seconds
-        @if (session('success'))
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: '{{ session('success') }}',
-                timer: 3000,
-                showConfirmButton: false,
-                toast: true,
-                position: 'top-end'
-            });
-        @endif
-
-        @if (session('error'))
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                text: '{{ session('error') }}',
-                timer: 3000,
-                showConfirmButton: false,
-                toast: true,
-                position: 'top-end'
-            });
-        @endif
     </script>
 </body>
 </html>

@@ -5,19 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login - Sistem Peminjaman Buku</title>
-    {{-- Memuat semua aset, termasuk SweetAlert melalui app.js --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100">
     <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-
+        
         <div class="w-full bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
             <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
                 <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
                     Login ke Akun Anda
                 </h1>
 
-                {{-- FORM HTML --}}
                 <form class="space-y-4 md:space-y-6" action="{{ route('login.post') }}" method="POST" id="loginForm" autocomplete="on" novalidate>
                     @csrf
                     <div>
@@ -49,7 +47,6 @@
                                 required
                             >
                             <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-600 hover:text-gray-900">
-                                {{-- SVG Icons --}}
                                 <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -70,7 +67,6 @@
     </div>
 
     <script>
-        // DEFINE TOGGLE PASSWORD (Pastikan ada di sini atau di app.js, jika di app.js, hapus definisi di sini)
         function togglePassword() {
             const passwordInput = document.getElementById('password');
             const eyeIcon = document.getElementById('eye-icon');
@@ -90,7 +86,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Fungsi helper untuk memastikan Swal tersedia
             function ensureSwal(callback) {
                 if (typeof Swal !== 'undefined') {
                     callback();
@@ -98,36 +93,33 @@
                     setTimeout(() => ensureSwal(callback), 100);
                 }
             }
-
-            // Cek Success Session (Misalnya dari Logout)
-            @if (session('success'))
+        
+        @if (session('success'))
                 ensureSwal(() => {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: '{{ session('success') }}',
-                        timer: 2000,
-                        showConfirmButton: false
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: '{{ session('success') }}',
+                timer: 2000,
+                showConfirmButton: false
                     });
-                });
-            @endif
+            });
+        @endif
 
-            // Cek Error Session (Jika ada error non-login yang dikirim via session)
-            @if (session('error'))
+        @if (session('error'))
                 ensureSwal(() => {
-                    Swal.fire({
-                        icon: 'error',
+            Swal.fire({
+                icon: 'error',
                         title: 'Login Gagal!',
-                        html: '<p class="text-lg font-semibold">{{ session('error') }}</p>',
+                html: '<p class="text-lg font-semibold">{{ session('error') }}</p>',
                         timer: 3000,
                         showConfirmButton: false,
                         toast: true,
                         position: 'top-end'
                     });
-                });
-            @endif
+            });
+        @endif
 
-            // Cek Error dari URL parameter (dari redirect AJAX)
             const urlParams = new URLSearchParams(window.location.search);
             const errorParam = urlParams.get('error');
             if (errorParam) {
@@ -142,20 +134,14 @@
                         position: 'top-end'
                     });
                 });
-                // Hapus parameter error dari URL
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
-            // =========================================================================
-            // LOGIKA AJAX LOGIN DENGAN RESET TOTAL
-            // =========================================================================
-
             const loginForm = document.getElementById('loginForm');
             const submitBtn = document.getElementById('submitButton');
-            let isSubmitting = false; // Flag untuk mencegah double submit
+            let isSubmitting = false;
 
             function handleUnlockForm() {
-                // UNLOCK SEMUA ELEMEN FORM
                 isSubmitting = false;
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -170,13 +156,11 @@
                     });
                 }
                 
-                // Hapus aria-hidden dari parent elements
                 const parentDiv = document.querySelector('.flex.flex-col.items-center.justify-center');
                 if (parentDiv) {
                     parentDiv.removeAttribute('aria-hidden');
                 }
                 
-                // Fokuskan kembali ke input username
                 const usernameInput = document.getElementById('username');
                 if (usernameInput) {
                     setTimeout(() => {
@@ -202,29 +186,26 @@
                 }
 
                 const form = loginForm;
-                const formData = new FormData(form);
-
+            const formData = new FormData(form);
+            
                 ensureSwal(() => {
-                    // Tampilkan loading SweetAlert
-                    Swal.fire({
-                        title: 'Memproses Login...',
-                        html: 'Mohon tunggu sebentar',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
+            Swal.fire({
+                title: 'Memproses Login...',
+                html: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
                         focusConfirm: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                            // Tambahkan atribut disabled ke form agar tombol Enter/input tidak berfungsi
-                            if (form) {
-                                form.setAttribute('data-disabled', 'true');
-                            }
-                        },
-                        didClose: () => {
-                            // Pastikan form di-unlock jika SweetAlert ditutup secara manual (misal error jaringan)
-                            if (isSubmitting) {
-                                handleUnlockForm();
-                            }
-                        }
+                didOpen: () => {
+                    Swal.showLoading();
+                    if (form) {
+                        form.setAttribute('data-disabled', 'true');
+                    }
+                },
+                didClose: () => {
+                    if (isSubmitting) {
+                        handleUnlockForm();
+                    }
+                }
                     });
 
                     fetch('{{ route('login.post') }}', {
@@ -238,7 +219,6 @@
                         credentials: 'same-origin'
                     })
                     .then(async response => {
-                        // Tutup SweetAlert loading segera
                         Swal.close(); 
                         
                         let data;
@@ -250,7 +230,6 @@
                         }
 
                         if (!response.ok) {
-                            // Gagal (Status 401 atau 422) - Redirect ke login dengan error message
                             let errorMessage = data.message || 'Username atau password salah!';
                             
                             if (response.status === 422 && data.errors) {
@@ -258,43 +237,37 @@
                                 errorMessage = errorList.join(', ');
                             }
                             
-                            // Redirect ke halaman login dengan error message
                             window.location.href = '{{ route('login') }}?error=' + encodeURIComponent(errorMessage);
                             return;
                         }
                         
-                        // SUCCESS (Status 200)
                         return Swal.fire({
-                            icon: 'success',
-                            title: 'Login Berhasil!',
-                            text: data.message || 'Anda berhasil login.',
-                            timer: 1500,
-                            showConfirmButton: false,
+                    icon: 'success',
+                    title: 'Login Berhasil!',
+                    text: data.message || 'Anda berhasil login.',
+                    timer: 1500,
+                    showConfirmButton: false,
                             focusConfirm: false,
-                            willClose: () => {
+                    willClose: () => {
                                 window.location.href = data.redirect || '{{ route('dashboard') ?? url('/') }}';
-                            }
-                        });
+                    }
+                });
 
                     })
                     .catch(error => {
-                        // Penanganan Error Jaringan/Parse JSON yang ekstrim - Redirect ke login
                         Swal.close();
                         window.location.href = '{{ route('login') }}?error=' + encodeURIComponent('Tidak dapat terhubung ke server. Silakan coba lagi.');
                     });
-                }); // End ensureSwal
+                });
             }
 
-            // Handler agar submit form maupun klik button bisa trigger handleLogin
             if (loginForm) {
-                // Handle submit event (Enter pada input terakhir akan submit form secara default)
                 loginForm.addEventListener('submit', handleLogin);
             }
             
             if (submitBtn) {
                 submitBtn.addEventListener('click', handleLogin);
                 
-                // Handle Enter key pada button (saat button difokus dengan Tab)
                 submitBtn.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' || e.keyCode === 13) {
                         e.preventDefault();
@@ -303,14 +276,11 @@
                 });
             }
             
-            // Handle Enter key pada input username - prevent submit tapi biarkan focus pindah ke password
             const usernameInput = document.getElementById('username');
             if (usernameInput) {
                 usernameInput.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' || e.keyCode === 13) {
-                        // Prevent form submit
                         e.preventDefault();
-                        // Pindahkan focus ke password field
                         const passwordInput = document.getElementById('password');
                         if (passwordInput) {
                             passwordInput.focus();
@@ -319,7 +289,6 @@
                 });
             }
             
-            // Handle Enter key pada input password (field terakhir) untuk trigger login
             const passwordInput = document.getElementById('password');
             if (passwordInput) {
                 passwordInput.addEventListener('keydown', function(e) {
@@ -343,7 +312,6 @@
             20%, 40%, 60%, 80% { transform: translateX(10px); }
         }
 
-        /* Pastikan form bisa digunakan setelah error */
         #loginForm:not([data-disabled="true"]) {
             pointer-events: auto !important;
         }

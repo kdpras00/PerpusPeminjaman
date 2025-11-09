@@ -42,7 +42,7 @@ class AnggotaExport implements FromCollection, WithHeadings, WithMapping
             $anggota->nama,
             $anggota->alamat,
             $anggota->no_telp,
-            $anggota->tgl_daftar->format('d/m/Y'),
+            $anggota->tgl_daftar ? $anggota->tgl_daftar->format('d/m/Y') : '-',
             ucfirst($anggota->status),
             $anggota->peminjaman_count
         ];

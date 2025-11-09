@@ -12,7 +12,7 @@
     <form action="{{ route('anggota.update', $anggota->id) }}" method="POST">
         @csrf
         @method('PUT')
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="md:col-span-2">
                 <label for="nama" class="block mb-2 text-sm font-medium text-gray-900">Nama Lengkap</label>
@@ -40,7 +40,7 @@
 
             <div>
                 <label for="tgl_daftar" class="block mb-2 text-sm font-medium text-gray-900">Tanggal Daftar</label>
-                <input type="date" name="tgl_daftar" id="tgl_daftar" value="{{ old('tgl_daftar', $anggota->tgl_daftar->format('Y-m-d')) }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                <input type="date" name="tgl_daftar" id="tgl_daftar" value="{{ old('tgl_daftar', $anggota->tgl_daftar ? $anggota->tgl_daftar->format('Y-m-d') : '') }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
                 @error('tgl_daftar')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror

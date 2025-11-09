@@ -51,7 +51,7 @@
                     <td class="px-6 py-4 font-medium text-gray-900">{{ $anggota->nama }}</td>
                     <td class="px-6 py-4">{{ Str::limit($anggota->alamat, 40) }}</td>
                     <td class="px-6 py-4">{{ $anggota->no_telp }}</td>
-                    <td class="px-6 py-4">{{ $anggota->tgl_daftar->format('d/m/Y') }}</td>
+                    <td class="px-6 py-4">{{ $anggota->tgl_daftar ? $anggota->tgl_daftar->format('d/m/Y') : '-' }}</td>
                     <td class="px-6 py-4">
                         <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $anggota->status == 'aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                             {{ ucfirst($anggota->status) }}

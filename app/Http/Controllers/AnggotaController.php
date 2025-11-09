@@ -60,7 +60,7 @@ class AnggotaController extends Controller
      */
     public function show(Anggota $anggota): View
     {
-        $anggota->load('peminjaman');
+        $anggota->load('peminjaman.buku', 'peminjaman.pengembalian');
 
         return view('anggota.show', compact('anggota'));
     }

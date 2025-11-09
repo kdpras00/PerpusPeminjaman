@@ -38,7 +38,7 @@
                 <td>{{ $anggota->nama }}</td>
                 <td>{{ $anggota->alamat }}</td>
                 <td>{{ $anggota->no_telp }}</td>
-                <td class="text-center">{{ $anggota->tgl_daftar->format('d/m/Y') }}</td>
+                <td class="text-center">{{ $anggota->tgl_daftar ? $anggota->tgl_daftar->format('d/m/Y') : '-' }}</td>
                 <td class="text-center">
                     <span class="badge {{ $anggota->status == 'aktif' ? 'badge-success' : 'badge-danger' }}">
                         {{ ucfirst($anggota->status) }}

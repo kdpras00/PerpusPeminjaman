@@ -17,7 +17,7 @@
             </svg>
             <h5 class="text-2xl font-bold tracking-tight text-gray-900">Laporan Peminjaman</h5>
         </div>
-        <p class="font-normal text-gray-700">Lihat laporan data transaksi peminjaman buku</p>
+        <p class="font-normal text-gray-700">Lihat laporan data peminjaman buku</p>
     </a>
 
     <a href="{{ route('laporan.pengembalian') }}" class="block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100">
@@ -27,7 +27,7 @@
             </svg>
             <h5 class="text-2xl font-bold tracking-tight text-gray-900">Laporan Pengembalian</h5>
         </div>
-        <p class="font-normal text-gray-700">Lihat laporan data transaksi pengembalian buku dan denda</p>
+        <p class="font-normal text-gray-700">Lihat laporan data pengembalian buku dan denda</p>
     </a>
 
     <a href="{{ route('laporan.buku') }}" class="block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100">

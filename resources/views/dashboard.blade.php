@@ -57,7 +57,7 @@
 <!-- Recent Transactions -->
 <div class="bg-white rounded-lg shadow">
     <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900">Transaksi Peminjaman Terbaru</h2>
+        <h2 class="text-lg font-semibold text-gray-900">Peminjaman Terbaru</h2>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm text-left text-gray-500">

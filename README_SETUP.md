@@ -51,7 +51,7 @@ Pastikan XAMPP sudah terinstall dan Apache + MySQL sudah running.
 Buka **phpMyAdmin** (http://localhost/phpmyadmin) dan buat database baru:
 
 ```sql
-CREATE DATABASE peminjamanBuku;
+CREATE DATABASE perpusPinjam;
 ```
 
 ### 3. Konfigurasi .env
@@ -62,7 +62,7 @@ Pastikan file `.env` sudah ada dan sesuaikan konfigurasi database:
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=peminjamanBuku
+DB_DATABASE=perpusPinjam
 DB_USERNAME=root
 DB_PASSWORD=
 ```
@@ -93,6 +93,11 @@ npm run build
 ```bash
 php artisan serve
 ```
+### 7. Jalankan Key Generate
+```bash
+php artisan key:generate
+```
+
 
 Aplikasi akan berjalan di: **http://localhost:8000**
 
